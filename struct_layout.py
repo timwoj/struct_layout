@@ -28,12 +28,13 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+import json
 import os
 import subprocess
 import sys
 from operator import attrgetter
 
-pointer_size = None
+pointer_size = 8
 
 input_file = None
 filter_str = ""
@@ -588,11 +589,15 @@ def parse_recursive(lno, lines):
     return lno, item
 
 
-def collect_types(tree, scope, types, typedefs):
+def collect_types(tree, scope, types, typedefs, tag_counts):
     if "DW_AT_name" in tree["fields"]:
         inner_scope = scope + "::" + tree["fields"]["DW_AT_name"]
     else:
         inner_scope = scope + "::" + "(anonymous)"
+
+    if tree["tag"] not in tag_counts:
+        tag_counts[tree["tag"]] = 0
+    tag_counts[tree["tag"]] += 1
 
     if tree["tag"] in tag_to_type:
         declaration = "DW_AT_declaration" in tree["fields"]
@@ -643,12 +648,12 @@ def collect_types(tree, scope, types, typedefs):
     ):
         if "children" in tree:
             for c in tree["children"]:
-                collect_types(c, inner_scope, types, typedefs)
+                collect_types(c, inner_scope, types, typedefs, tag_counts)
 
     elif tree["tag"] == "DW_TAG_compile_unit" or tree["tag"] == "DW_TAG_subprogram":
         if "children" in tree:
             for c in tree["children"]:
-                collect_types(c, scope, types, typedefs)
+                collect_types(c, scope, types, typedefs, tag_counts)
 
 
 def print_bar(val, maximum):
@@ -737,10 +742,45 @@ def print_usage():
 
 def process_dwarf_file(input_file):
     global pointer_size
+    items = []
 
-    f = subprocess.Popen(
-        ["dwarfdump", input_file], stdout=subprocess.PIPE, universal_newlines=True
-    )
+    if input_file.endswith(".json"):
+        with open(input_file) as f:
+            items = json.load(f)
+            print(f"read {len(items)} items from json file")
+    else:
+        #        f = subprocess.Popen(['dwarfdump', input_file], stdout=subprocess.PIPE, universal_newlines=True)
+        #        [lines, f_err] = f.communicate()
+
+        f = open(input_file)
+        lines = f.readlines()
+        print(f"lines: {len(lines)}")
+
+        # TODO: it would probably be a lot faster to change the
+        # parser to just use the file object instead of reading
+        # the whole file up-front
+
+        lno = 0
+        for l in lines:
+            lno += 1
+            if "Compile Unit:" in l and "addr_size =" in l:
+                pointer_size = int(
+                    l.split("addr_size =")[1].strip().split(" ", 1)[0], 16
+                )
+                break
+
+        if pointer_size == None:
+            return False
+
+        while lno < len(lines):
+            lno, tree = parse_recursive(lno, lines)
+            print(f"finished line{lno}")
+            if tree != None:
+                items.append(tree)
+
+        print(f"finished recursive parsing with {len(items)} items")
+        with open(f"{input_file}.parsed.json", "w") as jsonf:
+            json.dump(items, jsonf)
 
     # types maps addresses to types
     types = {}
@@ -751,35 +791,13 @@ def process_dwarf_file(input_file):
     # links to declarations to definitions when available
     typedefs = {}
 
-    lines = []
-
-    # TODO: it would probably be a lot faster to change the
-    # parser to just use the file object instead of reading
-    # the whole file up-front
-
-    for l in f.stdout:
-        lines.append(l)
-
-    lno = 0
-    items = []
-
-    while lno < len(lines):
-        l = lines[lno]
-        lno += 1
-        if "Compile Unit:" in l and "addr_size =" in l:
-            pointer_size = int(l.split("addr_size =")[1].strip().split(" ", 1)[0], 16)
-            break
-
-    if pointer_size == None:
-        return False
-
-    while lno < len(lines):
-        lno, tree = parse_recursive(lno, lines)
-        if tree != None:
-            items.append(tree)
+    tag_counts = {}
 
     for i in items:
-        collect_types(i, "", types, typedefs)
+        collect_types(i, "", types, typedefs, tag_counts)
+
+    print(tag_counts)
+    print(f"finished collecting {len(types)} types and {len(typedefs)} typedefs")
 
     already_printed = set()
 
