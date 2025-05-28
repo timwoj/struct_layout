@@ -28,9 +28,9 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-import sys
-import subprocess
 import os
+import subprocess
+import sys
 from operator import attrgetter
 
 pointer_size = None
@@ -198,7 +198,7 @@ class DwarfArrayType(DwarfBase):
         return self._types[self._underlying_type].size() * self._num_elements
 
     def name(self):
-        return self._types[self._underlying_type].name() + "[%d]" % self._num_elements
+        return self._types[self._underlying_type].name() + f"[{self._num_elements}]"
 
 
 class DwarfBaseType(DwarfBase):
@@ -247,11 +247,11 @@ class DwarfMember:
             # access profile mode
             if t.has_fields():
                 if self._name == "<base-class>":
-                    name = "<base-class> %s" % t.name()
+                    name = f"<base-class> {t.name()}"
                 else:
                     name = self._name
-                name_field = "%s%s" % ((" " * indent), name)
-                print("      %-91s|" % name_field)
+                name_field = f"{' ' * indent}{name}"
+                print(f"      {name_field:-91s}|")
 
                 return t.print_fields(
                     self._offset + offset, expected, indent + 1, prof, cache_lines
@@ -266,10 +266,10 @@ class DwarfMember:
                     cnt = prof[0][1]
                     member_offset = prof[0][0] - self._offset - offset
                     if member_offset != 0:
-                        moff = "%+d" % member_offset
+                        moff = f"{member_offset:+d}"
                     else:
                         moff = ""
-                    name_field = "%s%s%s" % ((" " * indent), self._name, moff)
+                    name_field = f"{' ' * indent}{self._name}{moff}"
                     if len(name_field) > 30:
                         name_field = name_field[:30]
 
@@ -279,30 +279,17 @@ class DwarfMember:
                         len(cache_lines) == 0
                         or cache_lines[-1] < (self._offset + offset) / cache_line_size
                     ):
-                        cache_line = "%scache-line %d" % (
-                            restore,
-                            (self._offset + offset) / cache_line_size,
-                        )
+                        cache_line = f"{restore}cache-line {(self._offset + offset) / cache_line_size}"
                         cache_line_prefix = cachecol
                         cache_lines.append((self._offset + offset) / cache_line_size)
 
                     print(
-                        "%s%5d %-30s %s%8d: %s%s| %s"
-                        % (
-                            cache_line_prefix,
-                            self._offset + offset,
-                            name_field,
-                            barcolor,
-                            cnt,
-                            print_bar(cnt, prof_max),
-                            restore,
-                            cache_line,
-                        )
+                        f"{cache_line_prefix:s}{self._offset + offset:5d} {name_field:-30s} {barcolor:s}{cnt:8d}: {print_bar(cnt, prof_max):s}{restore:s}| {cache_line:s}"
                     )
                     num_printed += 1
                     del prof[0]
                 if num_printed == 0:
-                    name_field = "%s%s" % ((" " * indent), self._name)
+                    name_field = "{:s}{:s}".format((" " * indent), self._name)
 
                     cache_line = ""
                     cache_line_prefix = ""
@@ -310,21 +297,12 @@ class DwarfMember:
                         len(cache_lines) == 0
                         or cache_lines[-1] < (self._offset + offset) / cache_line_size
                     ):
-                        cache_line = "%scache-line %d" % (
-                            restore,
-                            (self._offset + offset) / cache_line_size,
-                        )
+                        cache_line = f"{restore:s}cache-line {(self._offset + offset) / cache_line_size:d}"
                         cache_line_prefix = cachecol
                         cache_lines.append((self._offset + offset) / cache_line_size)
 
                     print(
-                        "%s%5d %-91s| %s"
-                        % (
-                            cache_line_prefix,
-                            self._offset + offset,
-                            name_field,
-                            cache_line,
-                        )
+                        f"{cache_line_prefix:s}{self._offset + offset:5d} {name_field:-91s}| {cache_line:s}"
                     )
 
             return self._offset + offset + t.size()
@@ -332,15 +310,17 @@ class DwarfMember:
             # normal struct layout mode
             if num_padding > 0:
                 print(
-                    "%s   --- %d Bytes padding --- %s%s"
-                    % (padcolor, num_padding, (" " * 60), restore)
+                    "{:s}   --- {:d} Bytes padding --- {:s}{:s}".format(
+                        padcolor, num_padding, (" " * 60), restore
+                    )
                 )
                 expected = self._offset + offset
 
             if t.has_fields():
                 print(
-                    "     : %s[%s : %d] %s"
-                    % (("  " * indent), t.name(), t.size(), self._name)
+                    "     : {:s}[{:s} : {:d}] {:s}".format(
+                        ("  " * indent), t.name(), t.size(), self._name
+                    )
                 )
                 return t.print_fields(
                     self._offset + offset, expected, indent + 1, prof, cache_lines
@@ -352,14 +332,11 @@ class DwarfMember:
                     len(cache_lines) == 0
                     or cache_lines[-1] < (self._offset + offset) / cache_line_size
                 ):
-                    cache_line = " -- {cache-line %d}%s" % (
-                        (self._offset + offset) / cache_line_size,
-                        restore,
-                    )
+                    cache_line = f" -- {{cache-line {int((self._offset + offset) / cache_line_size):d}}}{restore:s}"
                     cache_line_prefix = cachecol
                     cache_lines.append((self._offset + offset) / cache_line_size)
 
-                l = "%5d: %s[%s : %d] %s" % (
+                l = "{:5d}: {:s}[{:s} : {:d}] {:s}".format(
                     self._offset + offset,
                     ("  " * indent),
                     t.name(),
@@ -367,13 +344,7 @@ class DwarfMember:
                     self._name,
                 )
                 print(
-                    "%s%-*s%s"
-                    % (
-                        cache_line_prefix,
-                        terminal_width - len(cache_line) - 1,
-                        l,
-                        cache_line,
-                    )
+                    f"{cache_line_prefix:s}{terminal_width - len(cache_line) - 1:-*s}{l:s}"
                 )
                 return self._offset + offset + t.size()
 
@@ -407,7 +378,7 @@ class DwarfStructType(DwarfBase):
 
                 self._fields.append(DwarfMember(m, types))
         except Exception as e:
-            print("EXCEPTION! %s: " % self._name, e)
+            print(f"EXCEPTION! {self._name} ", e)
             pass
 
         self._fields = sorted(self._fields, key=attrgetter("_offset"))
@@ -419,7 +390,7 @@ class DwarfStructType(DwarfBase):
         return self._name
 
     def full_name(self):
-        return "%s::%s" % (self._scope, self._name)
+        return f"{self._scope:s}::{self._name:s}"
 
     def print_struct(self):
         if self._declaration:
@@ -432,7 +403,7 @@ class DwarfStructType(DwarfBase):
 
         prof = None
         if profile != None:
-            prof_name = "%s::%s" % (self._scope, self._name)
+            prof_name = f"{self._scope:s}::{self._name:s}"
             cnts = profile[prof_name[2:]]
             if cnts != None:
                 prof = []
@@ -444,8 +415,7 @@ class DwarfStructType(DwarfBase):
                 prof = sorted(prof)
 
         print(
-            "\nstruct %s%s::%s%s [%d Bytes]"
-            % (structcolor, self._scope, self._name, restore, self._size)
+            f"\nstruct {structcolor:s}{self._scope:s}::{self._name:s}{restore:s} [{self._size} Bytes]"
         )
         expected = self.print_fields(0, 0, 0, prof, [])
 
@@ -453,8 +423,9 @@ class DwarfStructType(DwarfBase):
             num_padding = (self._size) - expected
             if num_padding > 0:
                 print(
-                    "%s   --- %d Bytes padding --- %s%s"
-                    % (padcolor, num_padding, (" " * 60), restore)
+                    "{:s}   --- {:d} Bytes padding --- {:s}{:s}".format(
+                        padcolor, num_padding, (" " * 60), restore
+                    )
                 )
 
     def print_fields(self, offset, expected, indent, prof, cache_lines):
@@ -474,7 +445,7 @@ class DwarfStructType(DwarfBase):
         if self._declaration:
             return False
 
-        typename = "%s::%s" % (self._scope, self._name)
+        typename = f"{self._scope:s}::{self._name:s}"
 
         global profile
         if profile != None:
@@ -500,7 +471,7 @@ class DwarfUnionType(DwarfStructType):
         return "union " + DwarfStructType.name(self)
 
     def print_struct(self):
-        print("\nunion %s::%s [%d Bytes]" % (self._scope, self._name, self._size))
+        print(f"\nunion {self._scope:s}::{self._name:s} [{self._size:d} Bytes]")
         self.print_fields(0, 0, 0, None, [])
 
 
@@ -514,10 +485,7 @@ class DwarfMemberPtrType(DwarfTypedef):
         return pointer_size
 
     def name(self):
-        return "%s (%s::*)" % (
-            self._types[self._underlying_type].name(),
-            self._types[self._class_type].name(),
-        )
+        return f"{self._types[self._underlying_type].name():s} ({self._types[self._class_type].name():s}::*)"
 
     def match(self, f):
         return False
@@ -720,7 +688,9 @@ def get_terminal_size():
 
     def ioctl_GWINSZ(fd):
         try:
-            import fcntl, termios, struct, os
+            import fcntl
+            import struct
+            import termios
 
             cr = struct.unpack("hh", fcntl.ioctl(fd, termios.TIOCGWINSZ, "1234"))
         except:
@@ -741,7 +711,7 @@ def get_terminal_size():
 
 
 def print_usage():
-    print("usage: %s [options] exe-file [name-prefix-filter]\n" % sys.argv[0])
+    print(f"usage: {sys.argv[0]:s} [options] exe-file [name-prefix-filter]\n")
     print("exe-file must have DWARF debug symbols in it. It")
     print("may be an object file, shared library or executable. On Mac")
     print("dsymutils will be invoked for files with no direct debug symbols")
@@ -858,7 +828,7 @@ while i < len(sys.argv):
     elif a == "-p":
         i += 1
         profile_file = sys.argv[i]
-        f = open(profile_file, "r")
+        f = open(profile_file)
         profile = {}
         it = iter(f)
         print(it.next())  # skip the first blank line
