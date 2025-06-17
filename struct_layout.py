@@ -740,9 +740,10 @@ def process_dwarf_file(input_file):
         if pointer_size == None:
             return False
 
-        while lno < len(lines):
+        num_lines = len(lines)
+        while lno < num_lines:
             lno, tree = parse_recursive(lno, lines)
-            print(f"finished line{lno}")
+            print(f"finished line {lno} ({int(lno / num_lines * 100):d}% complete)")
             if tree != None:
                 items.append(tree)
 
