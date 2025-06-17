@@ -724,9 +724,8 @@ def process_dwarf_file(input_file):
         lines = f.readlines()
         print(f"lines: {len(lines)}")
 
-        # TODO: it would probably be a lot faster to change the
-        # parser to just use the file object instead of reading
-        # the whole file up-front
+        # TODO: it would probably be a lot faster to change the parser to just use the
+        # file object instead of reading the whole file up-front
 
         lno = 0
         for l in lines:
@@ -754,10 +753,9 @@ def process_dwarf_file(input_file):
     # types maps addresses to types
     types = {}
 
-    # typedefs maps fully qualiied names of
-    # types to their address, but only complete
-    # types, not declarations. This is used to rewrite
-    # links to declarations to definitions when available
+    # typedefs maps fully qualiied names of types to their address, but only complete
+    # types, not declarations. This is used to rewrite links to declarations to
+    # definitions when available
     typedefs = {}
 
     tag_counts = {}
