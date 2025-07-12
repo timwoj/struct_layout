@@ -243,6 +243,8 @@ class DwarfMember:
         global padcolor
         global cachecol
 
+        std_classes = ["const basic_string<", "basic_string<", "map<", "vector<"]
+
         if prof != None:
             # access profile mode
             if t.has_fields():
@@ -316,7 +318,13 @@ class DwarfMember:
                 )
                 expected = self._offset + offset
 
-            if t.has_fields():
+            is_nonstd_type = True
+            for st in std_classes:
+                if t.name().startswith(st):
+                    is_nonstd_type = False
+                    break
+
+            if t.has_fields() and is_nonstd_type:
                 print(
                     "     : {:s}[{:s} : {:d}] {:s}".format(
                         ("  " * indent), t.name(), t.size(), self._name
