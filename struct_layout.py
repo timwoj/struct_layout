@@ -780,14 +780,11 @@ def process_dwarf_file(input_file):
     if input_file.endswith(".json"):
         with open(input_file) as f:
             items = json.load(f)
-            print(f"read {len(items)} items from json file")
+            print(f"Read {len(items)} items from json file")
     else:
-        #        f = subprocess.Popen(['dwarfdump', input_file], stdout=subprocess.PIPE, universal_newlines=True)
-        #        [lines, f_err] = f.communicate()
-
         f = open(input_file)
         lines = f.readlines()
-        print(f"lines: {len(lines)}")
+        print(f"Have {len(lines)} lines to parse from dwarfdump output")
 
         # TODO: it would probably be a lot faster to change the parser to just use the
         # file object instead of reading the whole file up-front
@@ -807,13 +804,19 @@ def process_dwarf_file(input_file):
         num_lines = len(lines)
         while lno < num_lines:
             lno, tree = parse_recursive(lno, lines)
-            print(f"finished line {lno} ({int(lno / num_lines * 100):d}% complete)")
+            print(
+                f"Finished line {lno} ({int(lno / num_lines * 100):d}% complete)",
+                end="\r",
+            )
             if tree != None:
                 items.append(tree)
 
-        print(f"finished recursive parsing with {len(items)} items")
+        print()
+        print(f"Finished recursive parsing with {len(items)} items")
         with open(f"{input_file}.parsed.json", "w") as jsonf:
             json.dump(items, jsonf)
+            print(f"Dumped parsed data to {input_file}.parsed.json")
+        print()
 
     # types maps addresses to types
     types = {}
@@ -825,11 +828,13 @@ def process_dwarf_file(input_file):
 
     tag_counts = {}
 
+    print("Collecting type/typedef information from items")
+
     for i in items:
         collect_types(i, "", types, typedefs, tag_counts)
 
     print(tag_counts)
-    print(f"finished collecting {len(types)} types and {len(typedefs)} typedefs")
+    print(f"Finished collecting {len(types)} types and {len(typedefs)} typedefs")
 
     already_printed = set()
 
