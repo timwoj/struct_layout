@@ -522,7 +522,7 @@ class DwarfUnionType(DwarfStructType):
 class DwarfMemberPtrType(DwarfTypedef):
     def __init__(self, item, scope, types):
         DwarfTypedef.__init__(self, item, scope, types)
-        self._class_type = item["fields"]["DW_AT_containing_type"]
+        self._class_type = item["fields"]["DW_AT_containing_type"].split(" ")[0]
 
     def size(self):
         global pointer_size
