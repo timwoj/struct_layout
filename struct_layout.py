@@ -535,22 +535,41 @@ class DwarfMemberPtrType(DwarfTypedef):
         return False
 
 
+class DwarfRestrictType(DwarfTypedef):
+    def __init(self, item, scope, types):
+        DwarfTypedef.__init__(self, item, scope, types)
+
+    def name(self):
+        return "restrict " + DwarfTypedef.name(self)
+
+
+class DwarfAtomicType(DwarfTypedef):
+    def __init(self, item, scope, types):
+        DwarfTypedef.__init__(self, item, scope, types)
+
+    def name(self):
+        return "atomic " + DwarfTypedef.name(self)
+
+
 tag_to_type = {
-    "DW_TAG_base_type": DwarfBaseType,
-    "DW_TAG_pointer_type": DwarfPointerType,
-    "DW_TAG_reference_type": DwarfReferenceType,
-    "DW_TAG_rvalue_reference_type": DwarfRVReferenceType,
-    "DW_TAG_typedef": DwarfTypedef,
     "DW_TAG_array_type": DwarfArrayType,
-    "DW_TAG_const_type": DwarfConstType,
-    "DW_TAG_volatile_type": DwarfVolatileType,
-    "DW_TAG_structure_type": DwarfStructType,
+    "DW_TAG_atomic_type": DwarfAtomicType,
+    "DW_TAG_base_type": DwarfBaseType,
     "DW_TAG_class_type": DwarfStructType,
-    "DW_TAG_ptr_to_member_type": DwarfMemberPtrType,
+    "DW_TAG_const_type": DwarfConstType,
     "DW_TAG_enumeration_type": DwarfEnumType,
+    "DW_TAG_pointer_type": DwarfPointerType,
+    "DW_TAG_ptr_to_member_type": DwarfMemberPtrType,
+    "DW_TAG_reference_type": DwarfReferenceType,
+    "DW_TAG_restrict_type": DwarfRestrictType,
+    "DW_TAG_rvalue_reference_type": DwarfRVReferenceType,
+    "DW_TAG_structure_type": DwarfStructType,
+    # DW_TAG_subrange_type
     "DW_TAG_subroutine_type": DwarfFunPtrType,
+    "DW_TAG_typedef": DwarfTypedef,
     "DW_TAG_union_type": DwarfUnionType,
     "DW_TAG_unspecified_type": DwarfVoidType,
+    "DW_TAG_volatile_type": DwarfVolatileType,
 }
 
 
