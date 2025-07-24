@@ -71,43 +71,89 @@ class DwarfTypedef(DwarfBase):
             self._underlying_type = item["fields"]["DW_AT_type"].split()[0]
         else:
             # this means "void"
-            self._underlying_type = 0
+            self._underlying_type = None
 
     def size(self):
+        if hasattr(self._types[self._underlying_type], "_underlying_type"):
+            if (
+                self._types[self._underlying_type]._underlying_type
+                == self._underlying_type
+            ):
+                return 0
         return self._types[self._underlying_type].size()
 
     def name(self):
-        if self._underlying_type == 0:
+        if self._underlying_type is None:
             return "void"
         else:
-            return self._types[self._underlying_type].name()
+            if hasattr(self._types[self._underlying_type], "_underlying_type"):
+                if (
+                    self._types[self._underlying_type]._underlying_type
+                    == self._underlying_type
+                ):
+                    return "<recursive>"
+
+            try:
+                return self._types[self._underlying_type].name()
+            except RecursionError as e:
+                print(e)
+                print(f"Offending underlying type {self._underlying_type}")
 
     def full_name(self):
-        if self._underlying_type == 0:
+        if self._underlying_type is None:
             return "void"
         else:
-            return self._types[self._underlying_type].full_name()
+            if hasattr(self._types[self._underlying_type], "_underlying_type"):
+                if (
+                    self._types[self._underlying_type]._underlying_type
+                    == self._underlying_type
+                ):
+                    return "<recursive>"
+
+            try:
+                return self._types[self._underlying_type].full_name()
+            except RecursionError as e:
+                print(e)
+                print(f"Offending underlying type {self._underlying_type}")
 
     def has_fields(self):
-        if self._underlying_type == 0:
+        if self._underlying_type is None:
             return False
+        if hasattr(self._types[self._underlying_type], "_underlying_type"):
+            if (
+                self._types[self._underlying_type]._underlying_type
+                == self._underlying_type
+            ):
+                return False
         return self._types[self._underlying_type].has_fields()
 
     def print_fields(self, offset, expected, indent, prof, cache_lines):
-        if self._underlying_type == 0:
+        if self._underlying_type is None:
             return 0
         return self._types[self._underlying_type].print_fields(
             offset, expected, indent, prof, cache_lines
         )
 
     def match(self, f):
-        if self._underlying_type == 0:
+        if self._underlying_type is None:
             return False
+        if hasattr(self._types[self._underlying_type], "_underlying_type"):
+            if (
+                self._types[self._underlying_type]._underlying_type
+                == self._underlying_type
+            ):
+                return False
         return self._types[self._underlying_type].match(f)
 
     def print_struct(self):
-        if self._underlying_type == 0:
+        if self._underlying_type is None:
             return
+        if hasattr(self._types[self._underlying_type], "_underlying_type"):
+            if (
+                self._types[self._underlying_type]._underlying_type
+                == self._underlying_type
+            ):
+                return
         self._types[self._underlying_type].print_struct()
 
 
