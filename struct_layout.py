@@ -44,7 +44,7 @@ prof_max = 0
 show_standard_types = False
 color_output = True
 cache_line_size = 64
-
+expand_standard_types = False
 
 class DwarfBase:
     def has_fields(self):
@@ -362,7 +362,7 @@ class DwarfMember:
                 )
                 expected = self._offset + offset
 
-            if t.has_fields():
+            if t.has_fields() and (expand_standard_types or not t.full_name().startswith("::std")):
                 print(
                     "     : {:s}[{:s} : {:d}] {:s}".format(
                         ("  " * indent), t.name(), t.size(), self._name
@@ -770,6 +770,8 @@ def print_usage():
     print("-c           disable color output")
     print("-p <file>    use the specified access_profile output file")
     print("             to display use counts for only instrumented types")
+    print("-s           expand ::std types in the output, printing internal")
+    print("             fields and gaps")
     print("")
     print("the dwarfdump tool is a dependency and need to be")
     print("installed on your system. On Mac OS X you may need dsymutil")
@@ -893,6 +895,8 @@ while i < len(sys.argv):
             name = l.strip()
             profile[name] = parse_profile(it)
         f.close()
+    elif a == "-s":
+        expand_standard_types = True
     else:
         break
     i += 1
