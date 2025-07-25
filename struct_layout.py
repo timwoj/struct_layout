@@ -712,7 +712,11 @@ def collect_types(tree, scope, types, typedefs, tag_counts):
             for c in tree["children"]:
                 collect_types(c, inner_scope, types, typedefs, tag_counts)
 
-    elif tree["tag"] == "DW_TAG_compile_unit" or tree["tag"] == "DW_TAG_subprogram":
+    elif (
+        tree["tag"] == "DW_TAG_compile_unit"
+        or tree["tag"] == "DW_TAG_subprogram"
+        or tree["tag"] == "DW_TAG_lexical_block"
+    ):
         if "children" in tree:
             for c in tree["children"]:
                 collect_types(c, scope, types, typedefs, tag_counts)
